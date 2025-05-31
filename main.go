@@ -7,36 +7,41 @@ import (
 	"strings"
 )
 
+const (
+	lightColorScheme = "prefer-light"
+	darkColorScheme = "prefer-dark"
+	lightTheme = "Adwaita"
+	darkTheme = "Adwaita-dark"
+)
+
 func getColorScheme() ([]byte, error) {
 	scheme, err := exec.Command("gsettings", "get", "org.gnome.desktop.interface", "color-scheme").Output()
 
 	return scheme, err
 }
 
-func getIsDarkScheme(scheme string) bool {
-	return strings.TrimSpace(scheme) == "'prefer-dark'"
-}
+func setColorScheme(isDark bool) error {
+	scheme := darkColorScheme
 
-func setColorScheme(isDarkScheme bool) error {
-	scheme := "prefer-dark"
-
-	if isDarkScheme {
-		scheme = "prefer-light"
+	if isDark {
+		scheme = lightColorScheme
 	}
 
-	err := exec.Command("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme).Run()
+	cmd := exec.Command("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme)
+	err := cmd.Run()
 
 	return err
 }
 
-func setTheme(isDarkScheme bool) error {
-	theme := "Adwaita-dark"
+func setTheme(isDark bool) error {
+	theme := darkTheme
 
-	if isDarkScheme {
-		theme = "Adwaita-light"
+	if isDark {
+		theme = lightTheme
 	}
 
-	err := exec.Command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", theme).Run()
+	cmd := exec.Command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", theme)
+	err := cmd.Run()
 
 	return err
 }
@@ -44,22 +49,22 @@ func setTheme(isDarkScheme bool) error {
 func main() {
 	scheme, err := getColorScheme()
 	if err != nil {
-		log.Fatalln("Unable to get theme name", err)
+		log.Fatalln("Unable to get current color scheme:", err)
 	}
 
-	isDarkScheme := getIsDarkScheme(string(scheme))
+	isDark := strings.Contains(string(scheme), darkColorScheme)
 
-	err = setColorScheme(isDarkScheme)
+	err = setColorScheme(isDark)
 	if err != nil {
-		log.Fatalln("Error while changing color scheme", err)
+		log.Fatalln("Error while changing color scheme:", err)
 	}
 
-	err = setTheme(isDarkScheme)
+	err = setTheme(isDark)
 	if err != nil {
-		log.Fatalln("Error while changing theme", err)
+		log.Fatalln("Error while changing theme:", err)
 	}
 
-	if isDarkScheme {
+	if isDark {
 		fmt.Println("Color scheme changed to: light")
 	} else {
 		fmt.Println("Color scheme changed to: dark")
